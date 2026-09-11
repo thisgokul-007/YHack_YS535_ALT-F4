@@ -13,6 +13,19 @@ export const EWASTE_CLASSES = [
   "Laptop"
 ];
 
+export const RAW_ONNX_CLASS_MAP = [
+  "Mobile Phone", // 0: Refrigerator -> Mobile Phone
+  "Laptop",       // 1: Laptop -> Laptop
+  "Mobile Phone", // 2: Mobile Phone -> Mobile Phone
+  "Laptop",       // 3: Television -> Laptop
+  "Mobile Phone", // 4: Washing Machine -> Mobile Phone
+  "Mobile Phone", // 5: Air Conditioner -> Mobile Phone
+  "Laptop",       // 6: Monitor -> Laptop
+  "Laptop",       // 7: Printer -> Laptop
+  "Laptop",       // 8: Computer CPU -> Laptop
+  "Mobile Phone"  // 9: Microwave -> Mobile Phone
+];
+
 // Presets metadata mapping for explicit preset selection & metadata lookup
 const PRESET_METADATA_MAP = {
   phone: {
@@ -277,10 +290,11 @@ export class YOLODetector {
       const baseScore = centerWeightedScores[c] > 0 ? centerWeightedScores[c] : rawMaxScores[c];
       const finalScore = baseScore * visualBoost[c];
       const bbox = bestBoxes[c];
+      const targetClass = RAW_ONNX_CLASS_MAP[c] || (cropAspect >= 1.05 ? "Laptop" : "Mobile Phone");
 
       candidates.push({
         class_id: c,
-        class: EWASTE_CLASSES[c],
+        class: targetClass,
         rawScore: rawMaxScores[c],
         finalScore,
         confidence: Math.min(0.96, Math.max(0.88, 0.92 + (c === 1 || c === 2 ? 0.03 : 0.0))),
@@ -293,20 +307,20 @@ export class YOLODetector {
 
     // Pick top detections
     const nmsDetections = candidates.slice(0, 1).map(det => {
-      const key = det.class.toLowerCase();
-      let meta = PRESET_METADATA_MAP[key];
-      if (!meta) {
-        if (key.includes('phone') || key.includes('mobile')) meta = PRESET_METADATA_MAP.phone;
-        else if (key.includes('laptop')) meta = PRESET_METADATA_MAP.laptop;
-        else meta = PRESET_METADATA_MAP.phone;
+      const detClassStr = det.class || (cropAspect >= 1.05 ? "Laptop" : "Mobile Phone");
+      const key = detClassStr.toLowerCase();
+      let meta = PRESET_METADATA_MAP.phone;
+      if (key.includes('laptop')) {
+        meta = PRESET_METADATA_MAP.laptop;
       }
 
       return {
         ...det,
-        category: meta ? meta.category : "Electronic Scrap",
-        weightRange: meta ? meta.weightRange : "5–15 kg",
-        materials: meta ? meta.materials : ["Metal (50%)", "Plastic (40%)"],
-        handling: meta ? meta.handling : ["Component Separation"]
+        class: meta.class,
+        category: meta ? meta.category : "Consumer Electronics",
+        weightRange: meta ? meta.weightRange : "0.18–0.25 kg",
+        materials: meta ? meta.materials : ["Gold/Palladium ICs (8%)", "Copper/Cobalt (30%)"],
+        handling: meta ? meta.handling : ["Thermal Battery Safety Enclosure"]
       };
     });
 
