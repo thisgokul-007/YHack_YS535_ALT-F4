@@ -297,10 +297,8 @@ export class YOLODetector {
       let meta = PRESET_METADATA_MAP[key];
       if (!meta) {
         if (key.includes('phone') || key.includes('mobile')) meta = PRESET_METADATA_MAP.phone;
-        else if (key.includes('tv') || key.includes('television')) meta = PRESET_METADATA_MAP.tv;
         else if (key.includes('laptop')) meta = PRESET_METADATA_MAP.laptop;
-        else if (key.includes('washing')) meta = PRESET_METADATA_MAP.washing;
-        else meta = PRESET_METADATA_MAP.refrigerator;
+        else meta = PRESET_METADATA_MAP.phone;
       }
 
       return {

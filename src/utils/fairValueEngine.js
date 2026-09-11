@@ -74,8 +74,8 @@ export function getScrapRatePerKg(categoryName) {
 
 // 5. Fair-Value Engine Core Calculation Algorithm
 export function calculateFairValue(input) {
-  const category = input.category || "Refrigerator";
-  const refData = CATEGORY_REFERENCE_DATA[category] || CATEGORY_REFERENCE_DATA["Refrigerator"];
+  const category = input.category || "Mobile Phone";
+  const refData = CATEGORY_REFERENCE_DATA[category] || CATEGORY_REFERENCE_DATA["Mobile Phone"];
 
   // A. Weight Determination
   const weightKg = parseFloat(input.weightKg) > 0 ? parseFloat(input.weightKg) : refData.defaultWeightKg;

@@ -167,8 +167,8 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
       }
 
       // Initialize default weight for detected category
-      const detClass = (result.detections && result.detections.length > 0) ? result.detections[0].class : "Refrigerator";
-      const defaultWt = CATEGORY_REFERENCE_DATA[detClass]?.defaultWeightKg || 25;
+      const detClass = (result.detections && result.detections.length > 0) ? result.detections[0].class : "Mobile Phone";
+      const defaultWt = CATEGORY_REFERENCE_DATA[detClass]?.defaultWeightKg || 0.18;
       setCustomWeightKg(defaultWt.toString());
 
       if (canvasRef.current) {
@@ -193,15 +193,13 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
   const currentDetections = detectionResult.detections || [];
   const hasDetections = currentDetections.length > 0;
   const activeDetection = hasDetections ? currentDetections[selectedDetectionIdx] : null;  // Active Category Name
-  const activeCategory = activeDetection ? activeDetection.class : "Refrigerator";
-  const availableBrands = CATEGORY_BRANDS[activeCategory] || [
-    "LG", "Samsung", "Sony", "Dell", "HP", "Apple", "Whirlpool", "Panasonic"
-  ];
+  const activeCategory = activeDetection ? activeDetection.class : "Mobile Phone";
+  const availableBrands = CATEGORY_BRANDS[activeCategory] || CATEGORY_BRANDS["Mobile Phone"];
 
   // Effective Brand & Model
   const effectiveBrand = manualBrand || detectionResult.detectedBrand || "";
   const effectiveModel = manualModel || detectionResult.detectedModel || "";
-  const effectiveWeight = parseFloat(customWeightKg) > 0 ? parseFloat(customWeightKg) : (CATEGORY_REFERENCE_DATA[activeCategory]?.defaultWeightKg || 25);
+  const effectiveWeight = parseFloat(customWeightKg) > 0 ? parseFloat(customWeightKg) : (CATEGORY_REFERENCE_DATA[activeCategory]?.defaultWeightKg || 0.18);
 
   // Dynamic Fair-Value Calculation
   const valuation = calculateFairValue({
@@ -427,7 +425,7 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
                       key={idx}
                       onClick={() => {
                         setSelectedDetectionIdx(idx);
-                        const defaultWt = CATEGORY_REFERENCE_DATA[det.class]?.defaultWeightKg || 25;
+                        const defaultWt = CATEGORY_REFERENCE_DATA[det.class]?.defaultWeightKg || 0.18;
                         setCustomWeightKg(defaultWt.toString());
                         if (canvasRef.current && imageElementRef.current) {
                           defaultYoloDetector.drawBoundingBoxes(canvasRef.current, imageElementRef.current, currentDetections, idx);
@@ -727,7 +725,7 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
                               }}
                             />
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                              (Category default ref: {CATEGORY_REFERENCE_DATA[activeCategory]?.defaultWeightKg || 25} kg)
+                              (Category default ref: {CATEGORY_REFERENCE_DATA[activeCategory]?.defaultWeightKg || 0.18} kg)
                             </span>
                           </div>
                         </div>
