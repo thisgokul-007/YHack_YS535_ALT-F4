@@ -1,0 +1,20 @@
+# YOLOv8 Dataset Configuration for E-Waste Connect
+# Root path relative to project directory
+
+path: ./dataset
+train: images/train
+val: images/val
+test: images/test
+
+# 10 E-Waste Classes
+names:
+  0: refrigerator
+  1: laptop
+  2: mobile_phone
+  3: television
+  4: washing_machine
+  5: air_conditioner
+  6: monitor
+  7: printer
+  8: computer_cpu
+  9: microwave
