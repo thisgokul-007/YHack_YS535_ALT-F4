@@ -13,8 +13,13 @@ export default function CameraScanner({ onCaptureImage, onFallbackUpload, onCanc
     setErrorMessage('');
 
     try {
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (window.location.protocol !== 'https:' && !isLocalhost) {
+        throw new Error("WebRTC Camera access requires an HTTPS connection on remote URLs. Please access this app via HTTPS.");
+      }
+
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Browser does not support direct WebRTC camera access. Please use HTTPS or localhost.");
+        throw new Error("Browser does not support navigator.mediaDevices.getUserMedia. Please update your browser.");
       }
 
       // Prefer rear environment camera on mobile, fallback to default video
@@ -31,17 +36,20 @@ export default function CameraScanner({ onCaptureImage, onFallbackUpload, onCanc
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        await videoRef.current.play().catch(e => console.warn("Video play error:", e));
       }
       setCameraState('active');
     } catch (err) {
       console.error("Camera access error:", err);
       setCameraState('error');
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setErrorMessage("Camera access permission was denied. Please allow camera permissions in your browser or upload an image instead.");
+        setErrorMessage("Camera permission denied. Please allow camera access in browser site settings.");
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        setErrorMessage("No camera device detected on this device. You can upload an image instead.");
+        setErrorMessage("No camera hardware detected on this device. You can upload an image instead.");
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        setErrorMessage("Camera is currently in use by another application or tab.");
       } else {
-        setErrorMessage("Unable to access camera stream. " + (err.message || "Please check browser permissions."));
+        setErrorMessage(err.message || "Unable to access camera stream.");
       }
     }
   };

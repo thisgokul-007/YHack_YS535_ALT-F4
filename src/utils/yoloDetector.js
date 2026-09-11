@@ -1,4 +1,12 @@
-// Real YOLO Computer Vision Engine & Status Detector for E-Waste Connect
+// Real PyTorch + ONNX Web Hybrid Computer Vision Engine & Status Detector for E-Waste Connect
+import * as ort from 'onnxruntime-web';
+
+// Configure ONNX Web WASM
+try {
+  if (ort && ort.env && ort.env.wasm) {
+    ort.env.wasm.numThreads = 1;
+  }
+} catch (e) {}
 
 export const EWASTE_CLASSES = [
   "Refrigerator",
@@ -13,7 +21,7 @@ export const EWASTE_CLASSES = [
   "Microwave"
 ];
 
-// Presets metadata mapping for explicit preset selection
+// Presets metadata mapping for explicit preset selection & metadata lookup
 const PRESET_METADATA_MAP = {
   refrigerator: {
     class: "Refrigerator",
@@ -80,44 +88,237 @@ const PRESET_METADATA_MAP = {
   }
 };
 
+// Calculate Intersection over Union (IoU) for Non-Maximum Suppression
+function calculateIoU(boxA, boxB) {
+  const [x1, y1, w1, h1] = boxA;
+  const [x2, y2, w2, h2] = boxB;
+
+  const interX1 = Math.max(x1, x2);
+  const interY1 = Math.max(y1, y2);
+  const interX2 = Math.min(x1 + w1, x2 + w2);
+  const interY2 = Math.min(y1 + h1, y2 + h2);
+
+  const interWidth = Math.max(0, interX2 - interX1);
+  const interHeight = Math.max(0, interY2 - interY1);
+  const interArea = interWidth * interHeight;
+
+  const areaA = w1 * h1;
+  const areaB = w2 * h2;
+  const unionArea = areaA + areaB - interArea;
+
+  return unionArea > 0 ? interArea / unionArea : 0;
+}
+
 export class YOLODetector {
-  constructor(apiBaseUrl = "http://localhost:5000") {
+  constructor(apiBaseUrl = import.meta.env.VITE_YOLO_API_URL || "http://localhost:5000") {
     this.apiBaseUrl = apiBaseUrl;
     this.isTrained = false;
-    this.modelClasses = [];
-  }
-
-  // Check backend inference server status
-  async checkModelStatus() {
-    try {
-      const res = await fetch(`${this.apiBaseUrl}/api/status`);
-      if (res.ok) {
-        const data = await res.json();
-        this.isTrained = data.isTrained;
-        this.modelClasses = data.modelClasses || [];
-        return data;
-      }
-    } catch (err) {
-      console.log("PyTorch YOLO Inference Server offline:", err.message);
-    }
-    this.isTrained = false;
-    return {
-      isTrained: false,
-      message: "YOLO MODEL NOT CONNECTED. Please ensure best.pt is present and yolo_inference_server.py is running."
+    this.modelClasses = EWASTE_CLASSES;
+    this.onnxSession = null;
+    this.onnxLoading = false;
+    this.debugTelemetry = {
+      modelStatus: "NOT LOADED",
+      modelSource: "None",
+      modelPath: "None",
+      inferenceStatus: "IDLE",
+      rawDetections: [],
+      filteredDetections: [],
+      lastError: null
     };
   }
 
-  // Real inference execution on image source
-  async detectObjects(imageElement, options = {}) {
-    const status = await this.checkModelStatus();
+  // Pre-load ONNX Web session from public asset /models/best.onnx
+  async loadONNXModel() {
+    if (this.onnxSession) return true;
+    if (this.onnxLoading) return false;
 
-    // Check if input is a camera base64 data URL
+    this.onnxLoading = true;
+    this.debugTelemetry.modelStatus = "LOADING";
+    try {
+      const modelUrl = "/models/best.onnx";
+      console.log("Loading browser-side ONNX YOLO model from:", modelUrl);
+      this.onnxSession = await ort.InferenceSession.create(modelUrl, {
+        executionProviders: ['wasm']
+      });
+      console.log("✓ ONNX Web YOLO model loaded successfully in browser!");
+      this.onnxLoading = false;
+      this.debugTelemetry.modelStatus = "LOADED";
+      this.debugTelemetry.modelSource = "ONNX Web Browser Engine";
+      this.debugTelemetry.modelPath = modelUrl;
+      return true;
+    } catch (err) {
+      console.warn("ONNX Web model loading error:", err);
+      this.onnxLoading = false;
+      this.debugTelemetry.modelStatus = "FAILED";
+      this.debugTelemetry.lastError = err.message;
+      return false;
+    }
+  }
+
+  // Check model status across PyTorch REST API and browser-side ONNX Web
+  async checkModelStatus() {
+    // 1. Try PyTorch REST API endpoint
+    try {
+      const res = await fetch(`${this.apiBaseUrl}/api/status`, { signal: AbortSignal.timeout(2500) });
+      if (res.ok) {
+        const data = await res.json();
+        this.isTrained = data.isTrained;
+        this.modelClasses = data.modelClasses || EWASTE_CLASSES;
+        this.debugTelemetry.modelStatus = "LOADED";
+        this.debugTelemetry.modelSource = "PyTorch REST API";
+        this.debugTelemetry.modelPath = data.modelPath || `${this.apiBaseUrl}/api/detect`;
+        return {
+          isTrained: true,
+          mode: "PyTorch REST API",
+          apiUrl: this.apiBaseUrl,
+          modelClasses: this.modelClasses,
+          message: "PyTorch YOLO Inference Server active"
+        };
+      }
+    } catch (err) {
+      // Quietly fall back to ONNX Web browser engine
+    }
+
+    // 2. Check ONNX Web browser-side engine
+    const onnxLoaded = await this.loadONNXModel();
+    if (onnxLoaded) {
+      this.isTrained = true;
+      return {
+        isTrained: true,
+        mode: "ONNX Web Browser Engine",
+        apiUrl: "/models/best.onnx",
+        modelClasses: EWASTE_CLASSES,
+        message: "ONNX Web Browser YOLO Engine active"
+      };
+    }
+
+    this.isTrained = false;
+    this.debugTelemetry.modelStatus = "FAILED";
+    return {
+      isTrained: false,
+      mode: "NONE",
+      apiUrl: this.apiBaseUrl,
+      modelClasses: [],
+      message: "YOLO MODEL NOT LOADED. Backend server offline and browser ONNX model unavailable."
+    };
+  }
+
+  // Execute browser-side ONNX Web YOLO inference
+  async runONNXInference(imageElement, confThreshold = 0.25) {
+    if (!this.onnxSession) {
+      const loaded = await this.loadONNXModel();
+      if (!loaded) throw new Error("ONNX Web YOLO session could not be initialized");
+    }
+
+    // Prepare 640x640 input canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 640;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(imageElement, 0, 0, 640, 640);
+    const imgData = ctx.getImageData(0, 0, 640, 640);
+    const data = imgData.data;
+
+    // Convert RGBA to Float32 CHW array [1, 3, 640, 640]
+    const floatData = new Float32Array(1 * 3 * 640 * 640);
+    for (let i = 0; i < 640 * 640; i++) {
+      floatData[i] = data[i * 4] / 255.0; // Red
+      floatData[640 * 640 + i] = data[i * 4 + 1] / 255.0; // Green
+      floatData[2 * 640 * 640 + i] = data[i * 4 + 2] / 255.0; // Blue
+    }
+
+    const inputTensor = new ort.Tensor('float32', floatData, [1, 3, 640, 640]);
+    const inputName = this.onnxSession.inputNames[0];
+    const feeds = {};
+    feeds[inputName] = inputTensor;
+
+    const results = await this.onnxSession.run(feeds);
+    const outputTensor = results[this.onnxSession.outputNames[0]];
+    const outData = outputTensor.data;
+
+    const numAnchors = 8400;
+    const rawDetections = [];
+
+    // Parse [1, 14, 8400] tensor output
+    for (let i = 0; i < numAnchors; i++) {
+      let maxScore = 0;
+      let maxClassId = -1;
+
+      for (let c = 0; c < 10; c++) {
+        const score = outData[(4 + c) * numAnchors + i];
+        if (score > maxScore) {
+          maxScore = score;
+          maxClassId = c;
+        }
+      }
+
+      if (maxScore >= confThreshold) {
+        const cx = outData[0 * numAnchors + i] / 640;
+        const cy = outData[1 * numAnchors + i] / 640;
+        const w = outData[2 * numAnchors + i] / 640;
+        const h = outData[3 * numAnchors + i] / 640;
+
+        const x = Math.max(0, cx - w / 2);
+        const y = Math.max(0, cy - h / 2);
+
+        rawDetections.push({
+          class_id: maxClassId,
+          class: EWASTE_CLASSES[maxClassId] || "E-Waste Item",
+          confidence: Math.round(maxScore * 10000) / 10000,
+          bbox: [x, y, w, h]
+        });
+      }
+    }
+
+    // Apply Non-Maximum Suppression (NMS)
+    rawDetections.sort((a, b) => b.confidence - a.confidence);
+    const nmsDetections = [];
+
+    for (const det of rawDetections) {
+      let keep = true;
+      for (const existing of nmsDetections) {
+        if (det.class_id === existing.class_id && calculateIoU(det.bbox, existing.bbox) > 0.45) {
+          keep = false;
+          break;
+        }
+      }
+      if (keep) {
+        const key = det.class.toLowerCase();
+        let meta = PRESET_METADATA_MAP[key];
+        if (!meta) {
+          if (key.includes('phone') || key.includes('mobile')) meta = PRESET_METADATA_MAP.phone;
+          else if (key.includes('tv') || key.includes('television')) meta = PRESET_METADATA_MAP.tv;
+          else if (key.includes('laptop')) meta = PRESET_METADATA_MAP.laptop;
+          else if (key.includes('washing')) meta = PRESET_METADATA_MAP.washing;
+          else meta = PRESET_METADATA_MAP.refrigerator;
+        }
+
+        nmsDetections.push({
+          ...det,
+          category: meta ? meta.category : "Electronic Scrap",
+          weightRange: meta ? meta.weightRange : "5–15 kg",
+          materials: meta ? meta.materials : ["Metal (50%)", "Plastic (40%)"],
+          handling: meta ? meta.handling : ["Component Separation"]
+        });
+        if (nmsDetections.length >= 5) break;
+      }
+    }
+
+    return { rawDetections, nmsDetections };
+  }
+
+  // Real inference execution on image source with dual backend & telemetry
+  async detectObjects(imageElement, options = {}) {
+    this.debugTelemetry.inferenceStatus = "RUNNING";
+    this.debugTelemetry.lastError = null;
+
+    const status = await this.checkModelStatus();
     const imgSrc = imageElement.src || "";
     const isCameraCapture = imgSrc.startsWith("data:image/");
     const confThreshold = options.confThreshold || 0.25;
 
-    // If server is online, query PyTorch YOLO model
-    if (this.isTrained) {
+    // 1. Try PyTorch REST API backend if active
+    if (status.mode === "PyTorch REST API") {
       try {
         const res = await fetch(`${this.apiBaseUrl}/api/detect`, {
           method: "POST",
@@ -128,82 +329,90 @@ export class YOLODetector {
         if (res.ok) {
           const data = await res.json();
           const detections = data.detections || [];
-          const highestConf = detections.length > 0 ? detections[0].confidence : 0;
-          const finalClass = detections.length > 0 ? detections[0].class : "None";
+          
+          this.debugTelemetry.inferenceStatus = "SUCCESS";
+          this.debugTelemetry.rawDetections = detections;
+          this.debugTelemetry.filteredDetections = detections;
 
-          // STEP 7 — DEVELOPER CONSOLE DIAGNOSTICS LOGGING
           console.log("==================================================");
-          console.log("Image captured: YES");
-          console.log(`Image size: ${imageElement.naturalWidth || imageElement.width || 640}x${imageElement.naturalHeight || imageElement.height || 480}`);
-          console.log(`Model loaded: ${data.isTrained ? 'YES' : 'NO'}`);
-          console.log("Model classes:", data.modelClasses || this.modelClasses || []);
-          console.log("Inference completed: YES");
-          console.log("Raw detections:", detections);
-          console.log("Highest confidence:", highestConf);
-          console.log("Final detected class:", finalClass);
+          console.log("Inference Source: PyTorch REST API");
+          console.log(`Model Loaded: YES (${this.apiBaseUrl})`);
+          console.log("Raw Detections Count:", detections.length);
+          console.log("Detections Output:", detections);
           console.log("==================================================");
 
           return {
+            status: "SUCCESS",
             isModelAvailable: true,
             isDemoMode: false,
+            inferenceEngine: "PyTorch REST API",
             modelClasses: data.modelClasses || this.modelClasses,
             detectedBrand: data.detectedBrand || null,
             detectedModel: data.detectedModel || null,
-            detections: detections
+            detections: detections,
+            telemetry: this.debugTelemetry
           };
         }
       } catch (err) {
-        console.warn("PyTorch YOLO server request error:", err);
+        console.warn("PyTorch server request failed, attempting browser ONNX engine fallback...", err);
       }
     }
 
-    // For camera captures when model is offline: DO NOT default to Refrigerator!
-    if (isCameraCapture) {
-      console.log("==================================================");
-      console.log("Image captured: YES");
-      console.log(`Image size: ${imageElement.naturalWidth || imageElement.width || 640}x${imageElement.naturalHeight || imageElement.height || 480}`);
-      console.log("Model loaded: NO (YOLO Inference Server Offline)");
-      console.log("Inference completed: NO");
-      console.log("==================================================");
+    // 2. Try Browser-side ONNX Web Engine
+    if (this.onnxSession || (await this.loadONNXModel())) {
+      try {
+        const { rawDetections, nmsDetections } = await this.runONNXInference(imageElement, confThreshold);
+        
+        this.debugTelemetry.inferenceStatus = "SUCCESS";
+        this.debugTelemetry.rawDetections = rawDetections;
+        this.debugTelemetry.filteredDetections = nmsDetections;
 
-      return {
-        isModelAvailable: false,
-        isDemoMode: false,
-        message: "YOLO MODEL NOT CONNECTED. Please start the backend server (python yolo_inference_server.py).",
-        detections: []
-      };
-    }
+        console.log("==================================================");
+        console.log("Inference Source: ONNX Web Browser Engine (/models/best.onnx)");
+        console.log("Model Loaded: YES");
+        console.log("Raw Detections Count:", rawDetections.length);
+        console.log("Filtered Detections Count:", nmsDetections.length);
+        console.log("==================================================");
 
-    // Explicit Preset Selection Mode (when user manually picks preset buttons)
-    const srcLower = (imageElement.alt || imgSrc).toLowerCase();
-    let matchedPreset = null;
-
-    for (const [key, meta] of Object.entries(PRESET_METADATA_MAP)) {
-      if (srcLower.includes(key)) {
-        matchedPreset = meta;
-        break;
+        return {
+          status: "SUCCESS",
+          isModelAvailable: true,
+          isDemoMode: false,
+          inferenceEngine: "ONNX Web Browser Engine",
+          modelClasses: EWASTE_CLASSES,
+          detectedBrand: null,
+          detectedModel: null,
+          detections: nmsDetections,
+          telemetry: this.debugTelemetry
+        };
+      } catch (err) {
+        console.error("ONNX Web inference error:", err);
+        this.debugTelemetry.inferenceStatus = "FAILED";
+        this.debugTelemetry.lastError = err.message;
+        return {
+          status: "INFERENCE_FAILED",
+          isModelAvailable: true,
+          isDemoMode: false,
+          message: "YOLO INFERENCE FAILED: " + err.message,
+          detections: [],
+          telemetry: this.debugTelemetry
+        };
       }
     }
 
-    if (matchedPreset) {
-      return {
-        isModelAvailable: true,
-        isDemoMode: true,
-        message: "DEMO MODE — PRESET TEST",
-        detections: [matchedPreset]
-      };
-    }
-
-    // No matching preset & model offline: return empty detections
+    // 3. Model Not Loaded / Server Unavailable
+    this.debugTelemetry.inferenceStatus = "MODEL_NOT_LOADED";
     return {
+      status: "MODEL_NOT_LOADED",
       isModelAvailable: false,
       isDemoMode: false,
-      message: "YOLO MODEL NOT CONNECTED",
-      detections: []
+      message: "YOLO MODEL NOT LOADED. Please connect python yolo_inference_server.py or deploy /models/best.onnx.",
+      detections: [],
+      telemetry: this.debugTelemetry
     };
   }
 
-  // Draw bounding boxes on target canvas element
+  // Draw bounding boxes on canvas overlay
   drawBoundingBoxes(canvas, image, detections, selectedIndex = 0) {
     if (!canvas || !image) return;
 
@@ -211,12 +420,13 @@ export class YOLODetector {
     canvas.width = image.width || image.naturalWidth || 600;
     canvas.height = image.height || image.naturalHeight || 400;
 
-    // Draw image background
+    // Clear and draw image background
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
     if (!detections || detections.length === 0) return;
 
-    // Draw detection boxes
+    // Draw bounding boxes
     detections.forEach((det, idx) => {
       const [x, y, w, h] = det.bbox;
       const rectX = x * canvas.width;
@@ -233,7 +443,7 @@ export class YOLODetector {
       ctx.fillRect(rectX, rectY, rectW, rectH);
       ctx.strokeRect(rectX, rectY, rectW, rectH);
 
-      // Label Badge
+      // Badge Label
       const labelText = `YOLO: ${det.class} (${Math.round(det.confidence * 100)}%)`;
       ctx.font = 'bold 14px "Outfit", sans-serif';
       const textWidth = ctx.measureText(labelText).width;

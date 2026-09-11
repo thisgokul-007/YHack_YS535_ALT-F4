@@ -17,7 +17,10 @@ import {
   Edit3,
   Info,
   DollarSign,
-  Check
+  Terminal,
+  ChevronDown,
+  ChevronUp,
+  XCircle
 } from 'lucide-react';
 import { PRESET_PRODUCTS } from '../data/mockData';
 import { defaultYoloDetector } from '../utils/yoloDetector';
@@ -40,9 +43,12 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
   // Model Training Status
   const [modelStatus, setModelStatus] = useState({ isTrained: false, message: "Checking model status..." });
 
-  // YOLO Detection State
-  const [detectionResult, setDetectionResult] = useState({ isModelAvailable: true, isDemoMode: false, detections: [] });
+  // YOLO Detection State & Telemetry
+  const [detectionResult, setDetectionResult] = useState({ isModelAvailable: true, status: 'IDLE', detections: [], telemetry: {} });
   const [selectedDetectionIdx, setSelectedDetectionIdx] = useState(0);
+
+  // Developer Debug Panel Toggle State
+  const [showDebugPanel, setShowDebugPanel] = useState(true);
 
   // Canvas Refs
   const canvasRef = useRef(null);
@@ -51,7 +57,6 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
   // Brand / Model Identification State
   const [manualBrand, setManualBrand] = useState("");
   const [manualModel, setManualModel] = useState("");
-  const [isEditingBrand, setIsEditingBrand] = useState(false);
 
   // Condition Questionnaire State
   const [powerOn, setPowerOn] = useState("Yes");
@@ -64,12 +69,12 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
 
   const scanLogs = [
     "Capturing image frame buffer...",
-    "Querying PyTorch YOLO Inference Engine...",
+    "Initializing YOLO Computer Vision Engine...",
     "Extracting bounding boxes, class labels & OCR text...",
     "Inference Complete!"
   ];
 
-  // Check backend model status on mount
+  // Check model status on mount
   useEffect(() => {
     async function initModelCheck() {
       const status = await defaultYoloDetector.checkModelStatus();
@@ -102,7 +107,7 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
     if (baseProduct) img.alt = baseProduct.name;
 
     img.onload = async () => {
-      const result = await defaultYoloDetector.detectObjects(img, { enableMultiObject: true });
+      const result = await defaultYoloDetector.detectObjects(img, { enableMultiObject: true, confThreshold: 0.25 });
       setDetectionResult(result);
       setSelectedDetectionIdx(0);
 
@@ -110,7 +115,6 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
       if (result.detectedBrand) {
         setManualBrand(result.detectedBrand);
       } else if (baseProduct && baseProduct.name) {
-        // Preset product brand hint
         const firstWord = baseProduct.name.split(' ')[0];
         if (["LG", "Samsung", "Sony", "Dell", "HP", "Apple", "Whirlpool", "Panasonic"].includes(firstWord)) {
           setManualBrand(firstWord);
@@ -175,7 +179,7 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
     weightKg: effectiveWeight
   });
 
-  // Sample Recycler Offer Price for comparison display (e.g. ₹1,500 or 70% of fair value)
+  // Sample Recycler Offer Price for comparison
   const sampleRecyclerOfferPrice = Math.round((valuation.minFairValue * 0.70) / 100) * 100 || 1500;
   const offerEvaluation = evaluateRecyclerOffer(sampleRecyclerOfferPrice, valuation.minFairValue, valuation.maxFairValue);
 
@@ -190,54 +194,80 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
       {/* Header Title */}
       <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
         <div className="badge badge-cyan" style={{ marginBottom: '0.5rem' }}>
-          <Sparkles size={13} /> PyTorch YOLO Computer Vision + Dynamic Fair-Value Engine
+          <Sparkles size={13} /> Real YOLO Model + ONNX Web Engine
         </div>
         <h2 style={{ fontSize: '2.2rem', fontWeight: 800 }}>AI E-Waste Scanner & Valuation</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-          Capture e-waste photo for real YOLO classification & transparent multi-attribute fair value estimation.
+          Real YOLO classification & multi-attribute fair value estimation.
         </p>
       </div>
 
-      {/* Model Status Indicator Ribbon */}
-      {!modelStatus.isTrained ? (
-        <div style={{
-          background: 'rgba(245, 158, 11, 0.1)',
-          border: '1px solid rgba(245, 158, 11, 0.3)',
-          borderRadius: 'var(--radius-md)',
-          padding: '0.85rem 1.25rem',
-          marginBottom: '1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem'
-        }}>
-          <AlertTriangle size={24} color="#FBBF24" style={{ flexShrink: 0 }} />
-          <div style={{ flex: 1, fontSize: '0.82rem' }}>
-            <div style={{ fontWeight: 800, color: '#FBBF24', fontSize: '0.88rem' }}>
-              ⚠ PyTorch Inference Server: `python yolo_inference_server.py`
+      {/* Developer Telemetry & Debug Panel Toggle */}
+      <div className="glass-panel" style={{ marginBottom: '1.5rem', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+        <button
+          onClick={() => setShowDebugPanel(!showDebugPanel)}
+          style={{
+            width: '100%',
+            padding: '0.65rem 1rem',
+            background: 'rgba(0,0,0,0.3)',
+            border: 'none',
+            color: 'var(--accent-cyan)',
+            fontWeight: 700,
+            fontSize: '0.78rem',
+            display: 'flex',
+            justify: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer'
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Terminal size={15} /> DEVELOPER DIAGNOSTICS & TELEMETRY PANEL
+          </span>
+          {showDebugPanel ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+
+        {showDebugPanel && (
+          <div style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', fontFamily: 'monospace', background: '#0a0e1a', color: '#34D399', borderTop: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+              <div>
+                <span style={{ color: 'var(--text-muted)' }}>Host Environment: </span>
+                <strong style={{ color: '#FFF' }}>{window.location.origin}</strong>
+              </div>
+
+              <div>
+                <span style={{ color: 'var(--text-muted)' }}>Model Status: </span>
+                <strong style={{ color: modelStatus.isTrained ? '#34D399' : '#F87171' }}>
+                  {defaultYoloDetector.debugTelemetry.modelStatus}
+                </strong>
+              </div>
+
+              <div>
+                <span style={{ color: 'var(--text-muted)' }}>Inference Source: </span>
+                <strong style={{ color: '#38BDF8' }}>
+                  {defaultYoloDetector.debugTelemetry.modelSource || modelStatus.mode || 'None'}
+                </strong>
+              </div>
+
+              <div>
+                <span style={{ color: 'var(--text-muted)' }}>Inference Status: </span>
+                <strong style={{ color: '#FBBF24' }}>
+                  {defaultYoloDetector.debugTelemetry.inferenceStatus}
+                </strong>
+              </div>
             </div>
-            <div style={{ color: 'var(--text-muted)' }}>
-              Inference server on http://localhost:5000 (`weights/best.pt`). If offline, real AI detection will display offline alert.
+
+            <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px dashed rgba(255,255,255,0.1)', color: 'var(--text-muted)' }}>
+              <div>Raw Detections Count: <strong style={{ color: '#FFF' }}>{defaultYoloDetector.debugTelemetry.rawDetections.length}</strong></div>
+              <div>Filtered Output Count: <strong style={{ color: '#FFF' }}>{currentDetections.length}</strong></div>
+              {hasDetections && (
+                <div style={{ color: '#34D399', marginTop: '0.2rem' }}>
+                  Top Object: {activeDetection.class} ({Math.round(activeDetection.confidence * 100)}% conf) | BBox: [{activeDetection.bbox.map(n => n.toFixed(2)).join(', ')}]
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      ) : (
-        <div style={{
-          background: 'rgba(16, 185, 129, 0.1)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          borderRadius: 'var(--radius-md)',
-          padding: '0.75rem 1.25rem',
-          marginBottom: '1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          color: '#34D399',
-          fontSize: '0.85rem',
-          fontWeight: 700
-        }}>
-          <span>✓ PyTorch YOLO Model & Fair-Value Engine Connected (`weights/best.pt` @ port 5000)</span>
-          <span className="badge badge-fair">REAL AI ACTIVE</span>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Top Controls Ribbon */}
       <div className="glass-panel" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
@@ -392,25 +422,15 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
             {/* Mode Banner Indicator */}
             <div className="glass-panel" style={{ marginTop: '1rem', padding: '0.85rem 1rem', fontSize: '0.78rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Inference Pipeline:</span>
-                {detectionResult.isDemoMode ? (
-                  <span className="badge badge-below" style={{ fontSize: '0.68rem' }}>
-                    DEMO MODE — PRESET TEST
-                  </span>
-                ) : hasDetections ? (
-                  <span className="badge badge-fair" style={{ fontSize: '0.68rem' }}>
-                    REAL PYTORCH YOLO MODEL ACTIVE
-                  </span>
-                ) : (
-                  <span className="badge badge-unfair" style={{ fontSize: '0.68rem' }}>
-                    NO DETECTION / OFFLINE
-                  </span>
-                )}
+                <span style={{ color: 'var(--text-muted)' }}>Inference Engine:</span>
+                <span className="badge badge-fair" style={{ fontSize: '0.68rem' }}>
+                  {defaultYoloDetector.debugTelemetry.modelSource || 'REAL YOLO MODEL'}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Object Result, Brand/Model, Questionnaire & Fair-Value Engine */}
+          {/* Right Column: Object Result, Questionnaire & Fair-Value Engine */}
           <div>
             {!isScanning ? (
               hasDetections ? (
@@ -751,35 +771,53 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
 
                 </div>
               ) : (
-                /* No Detections / Model Offline Alert Box */
+                /* STEP 3 — 3 DISTINCT FAILURE CARDS */
                 <div className="glass-panel animate-fade-in" style={{ padding: '2rem', textAlign: 'center' }}>
-                  {!detectionResult.isModelAvailable ? (
+                  
+                  {/* CASE 1: YOLO MODEL NOT LOADED */}
+                  {detectionResult.status === 'MODEL_NOT_LOADED' || defaultYoloDetector.debugTelemetry.modelStatus === 'FAILED' ? (
+                    <div>
+                      <XCircle size={48} color="#F87171" style={{ margin: '0 auto 1rem' }} />
+                      <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#F87171', marginBottom: '0.5rem' }}>
+                        YOLO MODEL NOT LOADED
+                      </h3>
+                      <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+                        The YOLO model file could not be loaded from backend server or browser ONNX asset (<code style={{ color: 'var(--accent-cyan)' }}>/models/best.onnx</code>). Please check backend server status.
+                      </p>
+                      <button className="btn-accent-cyan" onClick={() => setActiveInputMode('camera')} style={{ justifyContent: 'center' }}>
+                        <Camera size={16} /> Retake Photo
+                      </button>
+                    </div>
+                  ) : detectionResult.status === 'INFERENCE_FAILED' ? (
+                    /* CASE 2: YOLO INFERENCE FAILED */
                     <div>
                       <AlertCircle size={48} color="#F87171" style={{ margin: '0 auto 1rem' }} />
                       <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#F87171', marginBottom: '0.5rem' }}>
-                        YOLO MODEL NOT CONNECTED
+                        YOLO INFERENCE FAILED
                       </h3>
                       <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-                        The YOLO model file (<code style={{ color: 'var(--accent-cyan)' }}>weights/best.pt</code>) or PyTorch inference backend (<code style={{ color: 'var(--accent-cyan)' }}>python yolo_inference_server.py</code>) is not connected. Please ensure the inference server is active.
+                        Inference execution failed during tensor preprocessing or model evaluation: <code style={{ color: 'var(--accent-amber)' }}>{detectionResult.message}</code>
                       </p>
                       <button className="btn-accent-cyan" onClick={() => setActiveInputMode('camera')} style={{ justifyContent: 'center' }}>
                         <Camera size={16} /> Retake Photo
                       </button>
                     </div>
                   ) : (
+                    /* CASE 3: NO SUPPORTED E-WASTE OBJECT DETECTED */
                     <div>
                       <AlertTriangle size={48} color="#FBBF24" style={{ margin: '0 auto 1rem' }} />
                       <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FBBF24', marginBottom: '0.5rem' }}>
-                        No E-Waste Object Detected
+                        NO SUPPORTED E-WASTE DETECTED
                       </h3>
                       <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-                        The YOLO model could not detect a recognizable e-waste appliance in this photo. Please retake with clearer lighting or point directly at the device.
+                        The YOLO model evaluated this image frame successfully, but no e-waste appliance matched above the confidence threshold (0.25). Please align the object in clear lighting and retake.
                       </p>
                       <button className="btn-primary" onClick={() => setActiveInputMode('camera')} style={{ justifyContent: 'center' }}>
                         <Camera size={16} /> Retake Photo
                       </button>
                     </div>
                   )}
+
                 </div>
               )
             ) : (
@@ -789,7 +827,7 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
                 </div>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Analyzing Captured E-Waste Image...</h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '300px', marginTop: '0.5rem' }}>
-                  Querying PyTorch YOLO model & Fair-Value Engine.
+                  Evaluating image with YOLO model & Fair-Value Engine.
                 </p>
               </div>
             )}
