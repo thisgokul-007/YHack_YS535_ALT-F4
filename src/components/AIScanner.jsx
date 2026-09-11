@@ -32,6 +32,39 @@ import {
 } from '../utils/fairValueEngine';
 import CameraScanner from './CameraScanner';
 
+export const CATEGORY_BRANDS = {
+  "Mobile Phone": [
+    "Samsung", "Apple", "OnePlus", "Xiaomi", "Redmi", "Realme", "Vivo", "Oppo", "Motorola", "Google"
+  ],
+  "Laptop": [
+    "Dell", "HP", "Lenovo", "Asus", "Acer", "Apple", "MSI", "Samsung", "Microsoft"
+  ],
+  "Refrigerator": [
+    "LG", "Samsung", "Whirlpool", "Godrej", "Haier", "Panasonic", "IFB", "Bosch", "Voltas Beko"
+  ],
+  "Air Conditioner": [
+    "LG", "Samsung", "Daikin", "Voltas", "Blue Star", "Panasonic", "Carrier", "Hitachi", "Lloyd"
+  ],
+  "Television": [
+    "Samsung", "LG", "Sony", "OnePlus", "Xiaomi", "TCL", "Hisense", "Panasonic"
+  ],
+  "Washing Machine": [
+    "LG", "Samsung", "Whirlpool", "IFB", "Bosch", "Godrej", "Haier", "Panasonic"
+  ],
+  "Monitor": [
+    "Dell", "LG", "Samsung", "Acer", "Asus", "HP", "Lenovo", "BenQ", "AOC"
+  ],
+  "Microwave": [
+    "LG", "Samsung", "IFB", "Whirlpool", "Panasonic", "Godrej", "Haier"
+  ],
+  "Printer": [
+    "HP", "Canon", "Epson", "Brother", "Samsung", "Ricoh", "Xerox"
+  ],
+  "Computer CPU": [
+    "Dell", "HP", "Lenovo", "Asus", "Acer", "Apple", "Intel", "AMD", "Custom Built"
+  ]
+};
+
 export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
   const [activeInputMode, setActiveInputMode] = useState('camera'); // 'camera' | 'captured' | 'preset'
   const [capturedImage, setCapturedImage] = useState(null);
@@ -157,10 +190,11 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
 
   const currentDetections = detectionResult.detections || [];
   const hasDetections = currentDetections.length > 0;
-  const activeDetection = hasDetections ? currentDetections[selectedDetectionIdx] : null;
-
-  // Active Category Name
+  const activeDetection = hasDetections ? currentDetections[selectedDetectionIdx] : null;  // Active Category Name
   const activeCategory = activeDetection ? activeDetection.class : "Refrigerator";
+  const availableBrands = CATEGORY_BRANDS[activeCategory] || [
+    "LG", "Samsung", "Sony", "Dell", "HP", "Apple", "Whirlpool", "Panasonic"
+  ];
 
   // Effective Brand & Model
   const effectiveBrand = manualBrand || detectionResult.detectedBrand || "";
@@ -470,11 +504,12 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', fontSize: '0.82rem' }}>
                       
-                      {/* Brand & Model Identification Card */}
+                      {/* Category-Specific Brand & Model Identification Card */}
                       <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.85rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                           <label style={{ fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                            <Tag size={14} color="var(--accent-cyan)" /> Brand & Model Identification
+                            <Tag size={14} color="var(--accent-cyan)" /> 
+                            Brand: <span style={{ color: '#FFF', fontWeight: 800 }}>{effectiveBrand || "Select brand"}</span>
                           </label>
 
                           {effectiveBrand ? (
@@ -483,20 +518,24 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
                             </span>
                           ) : (
                             <span className="badge badge-below" style={{ fontSize: '0.65rem' }}>
-                              Brand not detected
+                              Brand: Select brand
                             </span>
                           )}
                         </div>
 
-                        {/* Brand Selector / Input */}
+                        {/* Category-Specific Brand Selector */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', paddingBottom: '0.2rem' }}>
-                            {["LG", "Samsung", "Sony", "Dell", "HP", "Apple", "Whirlpool", "Panasonic", "Haier", "Voltas", "Godrej"].map((b) => (
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            Available brands for <strong style={{ color: 'var(--accent-cyan)' }}>{activeCategory}</strong>:
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', paddingBottom: '0.2rem' }}>
+                            {availableBrands.map((b) => (
                               <button
                                 key={b}
                                 onClick={() => setManualBrand(b)}
                                 style={{
-                                  padding: '0.3rem 0.65rem',
+                                  padding: '0.35rem 0.75rem',
                                   borderRadius: '6px',
                                   border: effectiveBrand.toLowerCase() === b.toLowerCase() ? '1.5px solid var(--accent-emerald)' : '1px solid var(--border-color)',
                                   background: effectiveBrand.toLowerCase() === b.toLowerCase() ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255,255,255,0.04)',
@@ -512,10 +551,10 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
                             ))}
                           </div>
 
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.35rem' }}>
                             <input 
                               type="text"
-                              placeholder="Enter Brand Manually (e.g. LG, Samsung)"
+                              placeholder={`Custom Brand for ${activeCategory}`}
                               value={manualBrand}
                               onChange={(e) => setManualBrand(e.target.value)}
                               style={{
@@ -803,16 +842,16 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
                       </button>
                     </div>
                   ) : (
-                    /* CASE 3: NO SUPPORTED E-WASTE OBJECT DETECTED */
+                    /* CASE 3: UNSUPPORTED E-WASTE ITEM DETECTED */
                     <div>
                       <AlertTriangle size={48} color="#FBBF24" style={{ margin: '0 auto 1rem' }} />
                       <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FBBF24', marginBottom: '0.5rem' }}>
-                        NO SUPPORTED E-WASTE DETECTED
+                        Unsupported e-waste item
                       </h3>
                       <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-                        The YOLO model evaluated this image frame successfully, but no e-waste appliance matched above the confidence threshold (0.25). Please align the object in clear lighting and retake.
+                        The object in this image was not recognized as a supported e-waste item. Please align a supported appliance (Mobile Phone, Laptop, Refrigerator, Air Conditioner, Television, Washing Machine, Monitor, Printer, CPU, Microwave) in clear lighting and retake.
                       </p>
-                      <button className="btn-primary" onClick={() => setActiveInputMode('camera')} style={{ justifyContent: 'center' }}>
+                      <button className="btn-primary" onClick={() => setActiveInputMode('camera')} style={{ justifyContent: 'center', margin: '0 auto' }}>
                         <Camera size={16} /> Retake Photo
                       </button>
                     </div>

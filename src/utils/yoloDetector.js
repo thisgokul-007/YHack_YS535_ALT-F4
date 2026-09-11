@@ -266,34 +266,11 @@ export class YOLODetector {
     // Dynamic Calibration Factor to scale raw scores relative to max score
     const calibrationScale = globalMaxScore > 0 ? (1.0 / globalMaxScore) : 1000.0;
 
-    // Aspect Ratio Weighting for 10 E-Waste Classes
-    const aspectWeights = new Float32Array(10).fill(1.0);
-    if (aspectRatio < 0.85) {
-      // Tall/Portrait items: Refrigerator, Computer CPU, Mobile Phone
-      aspectWeights[0] += 0.40; // Refrigerator
-      aspectWeights[8] += 0.35; // Computer CPU
-      aspectWeights[2] += 0.30; // Mobile Phone
-    } else if (aspectRatio > 1.25) {
-      // Wide/Landscape items: Air Conditioner, Television, Laptop, Monitor, Microwave, Printer
-      aspectWeights[5] += 0.40; // Air Conditioner
-      aspectWeights[3] += 0.35; // Television
-      aspectWeights[1] += 0.30; // Laptop
-      aspectWeights[6] += 0.30; // Monitor
-      aspectWeights[9] += 0.25; // Microwave
-      aspectWeights[7] += 0.20; // Printer
-    } else {
-      // Square/Cubic items: Washing Machine, Printer, Microwave
-      aspectWeights[4] += 0.40; // Washing Machine
-      aspectWeights[7] += 0.30; // Printer
-      aspectWeights[9] += 0.25; // Microwave
-    }
-
-    // Rank candidates by combining Calibrated ONNX Score * Aspect Weight
+    // Unbiased Pure YOLO Class Extraction
     const candidates = [];
     for (let c = 0; c < 10; c++) {
       const rawScore = classMaxScores[c];
       const calScore = rawScore * calibrationScale;
-      const combinedScore = calScore * aspectWeights[c];
       const anchorIdx = classBestAnchors[c];
 
       let cx = outData[0 * numAnchors + anchorIdx] / 640.0;
@@ -312,14 +289,18 @@ export class YOLODetector {
         class: EWASTE_CLASSES[c],
         rawScore,
         calScore,
-        combinedScore,
         confidence: Math.min(0.96, Math.max(0.85, 0.88 + (calScore - 0.75) * 0.15)),
         bbox: [x, y, w, h]
       });
     }
 
-    // Sort candidates descending by combinedScore
-    candidates.sort((a, b) => b.combinedScore - a.combinedScore);
+    // Sort candidates strictly descending by rawScore (Unbiased YOLO prediction!)
+    candidates.sort((a, b) => b.rawScore - a.rawScore);
+
+    // Filter out candidates if globalMaxScore is zero / negligible
+    if (globalMaxScore < 1e-6) {
+      return { rawDetections: [], nmsDetections: [] };
+    }
 
     // Pick top detections
     const nmsDetections = candidates.slice(0, 3).map(det => {
