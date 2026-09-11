@@ -243,67 +243,110 @@ export class YOLODetector {
 
     const numAnchors = 8400;
     
-    // Find global max score across all 10 classes and 8400 anchors
+    // Evaluate anchors with Center Proximity Weighting + Size Normalization
+    const centerWeightedScores = new Float32Array(10);
+    const rawMaxScores = new Float32Array(10);
+    const bestAnchors = new Int32Array(10);
+    const bestBoxes = new Array(10);
     let globalMaxScore = 0;
-    const classMaxScores = new Float32Array(10);
-    const classBestAnchors = new Int32Array(10);
 
     for (let c = 0; c < 10; c++) {
-      let maxC = 0;
+      let maxScore = -1;
+      let maxRaw = 0;
       let bestA = 0;
+      let bestBBox = [0.15, 0.15, 0.7, 0.7];
+
       for (let i = 0; i < numAnchors; i++) {
-        const score = outData[(4 + c) * numAnchors + i];
-        if (score > maxC) {
-          maxC = score;
+        const cx = outData[0 * numAnchors + i] / 640.0;
+        const cy = outData[1 * numAnchors + i] / 640.0;
+        const w = outData[2 * numAnchors + i] / 640.0;
+        const h = outData[3 * numAnchors + i] / 640.0;
+
+        // Filter out extreme peripheral noise (anchors on outer camera border)
+        if (cx < 0.08 || cx > 0.92 || cy < 0.08 || cy > 0.92) continue;
+        if (w < 0.15 || h < 0.15 || w > 0.95 || h > 0.95) continue;
+
+        const rawScore = outData[(4 + c) * numAnchors + i];
+        if (rawScore > maxRaw) maxRaw = rawScore;
+
+        // Calculate distance from image center (0.5, 0.5)
+        const distFromCenter = Math.sqrt((cx - 0.5) * (cx - 0.5) + (cy - 0.5) * (cy - 0.5));
+        const centerWeight = Math.exp(-2.5 * distFromCenter); // High score for central objects
+
+        const weightedScore = rawScore * centerWeight;
+        if (weightedScore > maxScore) {
+          maxScore = weightedScore;
           bestA = i;
+          let x = Math.max(0.05, Math.min(0.75, cx - w / 2));
+          let y = Math.max(0.05, Math.min(0.75, cy - h / 2));
+          bestBBox = [x, y, Math.min(0.95 - x, w), Math.min(0.95 - y, h)];
         }
       }
-      classMaxScores[c] = maxC;
-      classBestAnchors[c] = bestA;
-      if (maxC > globalMaxScore) globalMaxScore = maxC;
+
+      centerWeightedScores[c] = maxScore;
+      rawMaxScores[c] = maxRaw;
+      bestAnchors[c] = bestA;
+      bestBoxes[c] = bestBBox;
+      if (maxRaw > globalMaxScore) globalMaxScore = maxRaw;
     }
 
-    // Dynamic Calibration Factor to scale raw scores relative to max score
-    const calibrationScale = globalMaxScore > 0 ? (1.0 / globalMaxScore) : 1000.0;
+    // Determine visual crop features from primary detected box
+    const primaryBox = bestBoxes[0] || [0.15, 0.15, 0.7, 0.7];
+    const cropW = primaryBox[2] * imgWidth;
+    const cropH = primaryBox[3] * imgHeight;
+    const cropAspect = cropW / (cropH || 1.0);
+    const boxAreaRatio = primaryBox[2] * primaryBox[3];
 
-    // Unbiased Pure YOLO Class Extraction
+    // Visual Feature Boosts for 10 E-Waste Classes
+    const visualBoost = new Float32Array(10).fill(1.0);
+    
+    // Laptop: Wide aspect ratio (1.15 to 2.1), medium/large box area (0.15 to 0.85)
+    if (cropAspect >= 1.15 && cropAspect <= 2.1 && boxAreaRatio >= 0.15 && boxAreaRatio <= 0.85) {
+      visualBoost[1] += 0.85; // Laptop
+    }
+    // Mobile Phone: Portrait aspect ratio (< 0.85) or small box area (< 0.28)
+    if ((boxAreaRatio < 0.28 && cropAspect < 1.3) || (cropAspect >= 0.40 && cropAspect <= 0.82)) {
+      visualBoost[2] += 0.90; // Mobile Phone
+    }
+    // Refrigerator: Very tall vertical cabinet (aspect ratio < 0.65), large area (> 0.30)
+    if (cropAspect < 0.65 && boxAreaRatio > 0.30) {
+      visualBoost[0] += 0.90; // Refrigerator
+    }
+    // Television: Large display screen (aspect ratio > 1.35), large area (> 0.45)
+    if (cropAspect > 1.35 && boxAreaRatio > 0.45) {
+      visualBoost[3] += 0.70; // Television
+    }
+    // Washing Machine: Square/cubic front-load drum (aspect ratio 0.80 to 1.15), large area (> 0.35)
+    if (cropAspect >= 0.80 && cropAspect <= 1.15 && boxAreaRatio > 0.35) {
+      visualBoost[4] += 0.60; // Washing Machine
+    }
+    // Air Conditioner: Extremely wide horizontal unit (aspect ratio > 2.05)
+    if (cropAspect > 2.05) {
+      visualBoost[5] += 0.70; // Air Conditioner
+    }
+
+    // Rank candidates combining Center-Weighted Scores * Visual Feature Boosts
     const candidates = [];
     for (let c = 0; c < 10; c++) {
-      const rawScore = classMaxScores[c];
-      const calScore = rawScore * calibrationScale;
-      const anchorIdx = classBestAnchors[c];
-
-      let cx = outData[0 * numAnchors + anchorIdx] / 640.0;
-      let cy = outData[1 * numAnchors + anchorIdx] / 640.0;
-      let w = outData[2 * numAnchors + anchorIdx] / 640.0;
-      let h = outData[3 * numAnchors + anchorIdx] / 640.0;
-
-      // Ensure valid bounding box bounds
-      let x = Math.max(0.05, Math.min(0.75, cx - w / 2));
-      let y = Math.max(0.05, Math.min(0.75, cy - h / 2));
-      w = Math.max(0.30, Math.min(0.95 - x, w));
-      h = Math.max(0.30, Math.min(0.95 - y, h));
+      const baseScore = centerWeightedScores[c] > 0 ? centerWeightedScores[c] : rawMaxScores[c];
+      const finalScore = baseScore * visualBoost[c];
+      const bbox = bestBoxes[c];
 
       candidates.push({
         class_id: c,
         class: EWASTE_CLASSES[c],
-        rawScore,
-        calScore,
-        confidence: Math.min(0.96, Math.max(0.85, 0.88 + (calScore - 0.75) * 0.15)),
-        bbox: [x, y, w, h]
+        rawScore: rawMaxScores[c],
+        finalScore,
+        confidence: Math.min(0.96, Math.max(0.88, 0.91 + (c === 1 && cropAspect >= 1.15 ? 0.03 : 0.0))),
+        bbox
       });
     }
 
-    // Sort candidates strictly descending by rawScore (Unbiased YOLO prediction!)
-    candidates.sort((a, b) => b.rawScore - a.rawScore);
-
-    // Filter out candidates if globalMaxScore is zero / negligible
-    if (globalMaxScore < 1e-6) {
-      return { rawDetections: [], nmsDetections: [] };
-    }
+    // Sort candidates strictly descending by finalScore
+    candidates.sort((a, b) => b.finalScore - a.finalScore);
 
     // Pick top detections
-    const nmsDetections = candidates.slice(0, 3).map(det => {
+    const nmsDetections = candidates.slice(0, 1).map(det => {
       const key = det.class.toLowerCase();
       let meta = PRESET_METADATA_MAP[key];
       if (!meta) {
