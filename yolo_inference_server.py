@@ -23,7 +23,8 @@ CLASS_NAME_MAP = {
     "monitor": "Monitor",
     "printer": "Printer",
     "computer_cpu": "Computer CPU",
-    "microwave": "Microwave"
+    "microwave": "Microwave",
+    "oven": "Microwave"
 }
 
 # Category metadata mapping
@@ -40,6 +41,12 @@ CATEGORY_MAP = {
     "Microwave": {"category": "Small Household E-Waste", "weightRange": "12–16 kg", "materials": ["Steel Frame (65%)", "Copper Magnetron (18%)", "Glass Door (10%)"], "handling": ["High Voltage Capacitor Discharge"]}
 }
 
+KNOWN_BRANDS = [
+    "LG", "Samsung", "Sony", "Dell", "HP", "Apple", "Whirlpool", "Panasonic",
+    "Haier", "IFB", "Godrej", "Voltas", "Toshiba", "Philips", "Xiaomi", "Lenovo",
+    "Asus", "Acer", "Bosch", "Motorola", "Mi", "Carrier", "Hitachi"
+]
+
 def check_model_exists():
     project_root = os.path.dirname(os.path.abspath(__file__))
     best_pt = os.path.join(project_root, "weights", "best.pt")
@@ -55,27 +62,6 @@ def get_model_path():
     if os.path.exists(runs_best):
         return runs_best
     return None
-
-def run_server():
-    try:
-        from flask import Flask, request, jsonify
-        from flask_cors import CORS
-    except ImportError:
-        os.system("pip install flask flask-cors pillow")
-        from flask import Flask, request, jsonify
-        from flask_cors import CORS
-
-    app = Flask(__name__)
-    CORS(app)
-
-    model_path = get_model_path()
-    yolo_model = None
-
-KNOWN_BRANDS = [
-    "LG", "Samsung", "Sony", "Dell", "HP", "Apple", "Whirlpool", "Panasonic",
-    "Haier", "IFB", "Godrej", "Voltas", "Toshiba", "Philips", "Xiaomi", "Lenovo",
-    "Asus", "Acer", "Bosch", "Motorola", "Mi", "Carrier", "Hitachi"
-]
 
 def extract_brand_model_from_image(img_pil):
     """
@@ -107,6 +93,19 @@ def extract_brand_model_from_image(img_pil):
 
     return detected_brand, detected_model
 
+def run_server():
+    try:
+        from flask import Flask, request, jsonify
+        from flask_cors import CORS
+    except ImportError:
+        os.system("pip install flask flask-cors pillow")
+        from flask import Flask, request, jsonify
+        from flask_cors import CORS
+
+    app = Flask(__name__)
+    CORS(app)
+
+    model_path = get_model_path()
     yolo_model = None
     if model_path:
         try:
@@ -140,7 +139,7 @@ def extract_brand_model_from_image(img_pil):
         if yolo_model is None and coco_model is None:
             return jsonify({
                 "isTrained": False,
-                "message": "YOLO MODEL NOT CONNECTED. Please connect the trained YOLO model (python yolo_inference_server.py).",
+                "message": "YOLO MODEL NOT LOADED. Please connect the trained YOLO model (python yolo_inference_server.py).",
                 "detections": []
             }), 400
 
