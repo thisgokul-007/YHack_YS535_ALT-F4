@@ -54,6 +54,14 @@ export default function CameraScanner({ onCaptureImage, onFallbackUpload, onCanc
     }
   };
 
+  // Ensure stream is bound to video element whenever stream or cameraState updates
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(e => console.warn("Video play effect error:", e));
+    }
+  }, [stream, cameraState]);
+
   useEffect(() => {
     startCamera();
 
@@ -136,16 +144,22 @@ export default function CameraScanner({ onCaptureImage, onFallbackUpload, onCanc
         marginBottom: '1.25rem'
       }}>
         
+        {/* Video Element - Always Mounted for reliable ref assignment */}
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: cameraState === 'active' ? 'block' : 'none'
+          }}
+        />
+
         {cameraState === 'active' && (
           <>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-
             {/* Subtle Scanning Laser Line */}
             <div className="scanner-laser"></div>
 
