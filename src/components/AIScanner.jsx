@@ -34,35 +34,37 @@ import CameraScanner from './CameraScanner';
 
 export const CATEGORY_BRANDS = {
   "Mobile Phone": [
-    "Samsung", "Apple", "OnePlus", "Xiaomi", "Redmi", "Realme", "Vivo", "Oppo", "Motorola", "Google", "Nothing", "POCO", "iQOO", "Nokia", "Honor", "Asus", "Sony"
+    "Apple", "Samsung", "OnePlus", "Xiaomi", "Redmi", "Realme", "Vivo", "Oppo", "Motorola", "Google"
   ],
   "Laptop": [
-    "Dell", "HP", "Lenovo", "Asus", "Acer", "Apple", "MSI", "Samsung", "Microsoft", "Razer", "LG", "Alienware", "Toshiba", "Fujitsu", "Infinix", "Honor"
-  ],
-  "Refrigerator": [
-    "LG", "Samsung", "Whirlpool", "Godrej", "Haier", "Panasonic", "IFB", "Bosch", "Voltas Beko"
-  ],
-  "Air Conditioner": [
-    "LG", "Samsung", "Daikin", "Voltas", "Blue Star", "Panasonic", "Carrier", "Hitachi", "Lloyd"
-  ],
-  "Television": [
-    "Samsung", "LG", "Sony", "OnePlus", "Xiaomi", "TCL", "Hisense", "Panasonic"
-  ],
-  "Washing Machine": [
-    "LG", "Samsung", "Whirlpool", "IFB", "Bosch", "Godrej", "Haier", "Panasonic"
-  ],
-  "Monitor": [
-    "Dell", "LG", "Samsung", "Acer", "Asus", "HP", "Lenovo", "BenQ", "AOC"
-  ],
-  "Microwave": [
-    "LG", "Samsung", "IFB", "Whirlpool", "Panasonic", "Godrej", "Haier"
-  ],
-  "Printer": [
-    "HP", "Canon", "Epson", "Brother", "Samsung", "Ricoh", "Xerox"
-  ],
-  "Computer CPU": [
-    "Dell", "HP", "Lenovo", "Asus", "Acer", "Apple", "Intel", "AMD", "Custom Built"
+    "Dell", "HP", "Lenovo", "Asus", "Acer", "Apple", "MSI", "Samsung", "Microsoft"
   ]
+};
+
+export const CATEGORY_MODELS = {
+  "Mobile Phone": {
+    "Apple": ["iPhone 15", "iPhone 14", "iPhone 13", "iPhone 12", "iPhone 11", "iPhone SE"],
+    "Samsung": ["Galaxy S23", "Galaxy S22", "Galaxy A54", "Galaxy M34", "Galaxy Z Flip"],
+    "OnePlus": ["OnePlus 11", "OnePlus 10 Pro", "OnePlus Nord 3", "OnePlus 9R"],
+    "Xiaomi": ["Xiaomi 13 Pro", "Xiaomi 12 Pro", "Redmi Note 12", "Redmi 12C"],
+    "Redmi": ["Redmi Note 12", "Redmi Note 11", "Redmi 12C", "Redmi 10"],
+    "Realme": ["Realme 11 Pro", "Realme GT Neo", "Realme Narzo 60"],
+    "Vivo": ["Vivo V27", "Vivo Y100", "Vivo X90"],
+    "Oppo": ["Oppo Reno 10", "Oppo F23", "Oppo A78"],
+    "Motorola": ["Moto G84", "Edge 40", "Moto G54"],
+    "Google": ["Pixel 8", "Pixel 7a", "Pixel 7 Pro", "Pixel 6a"]
+  },
+  "Laptop": {
+    "Dell": ["Inspiron", "Vostro", "Latitude", "XPS", "G15 Gaming"],
+    "HP": ["Pavilion", "Envy", "Spectre", "ProBook", "Omen"],
+    "Lenovo": ["ThinkPad", "IdeaPad", "Yoga", "Legion"],
+    "Asus": ["ROG Strix", "TUF Gaming", "ZenBook", "Vivobook"],
+    "Acer": ["Aspire 5", "Nitro 5", "Predator Helios", "Swift 3"],
+    "Apple": ["MacBook Air M1/M2", "MacBook Pro 14/16", "MacBook Air Retina"],
+    "MSI": ["GF63 Thin", "Katana 15", "Stealth 16"],
+    "Samsung": ["Galaxy Book3", "Galaxy Book Flex", "Book2 Pro"],
+    "Microsoft": ["Surface Laptop 5", "Surface Pro 9", "Surface Laptop Go"]
+  }
 };
 
 export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
@@ -523,8 +525,8 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
                           )}
                         </div>
 
-                        {/* Category-Specific Brand Selector */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {/* Category-Specific Brand & Model Selector */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                             Available brands for <strong style={{ color: 'var(--accent-cyan)' }}>{activeCategory}</strong>:
                           </div>
@@ -533,7 +535,7 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
                             {availableBrands.map((b) => (
                               <button
                                 key={b}
-                                onClick={() => setManualBrand(b)}
+                                onClick={() => { setManualBrand(b); setManualModel(""); }}
                                 style={{
                                   padding: '0.35rem 0.75rem',
                                   borderRadius: '6px',
@@ -551,38 +553,54 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
                             ))}
                           </div>
 
-                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.35rem' }}>
-                            <input 
-                              type="text"
-                              placeholder={`Custom Brand for ${activeCategory}`}
-                              value={manualBrand}
-                              onChange={(e) => setManualBrand(e.target.value)}
-                              style={{
-                                flex: 1,
-                                background: 'rgba(0,0,0,0.4)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '6px',
-                                padding: '0.4rem 0.75rem',
-                                color: '#FFF',
-                                fontSize: '0.78rem'
-                              }}
-                            />
-                            <input 
-                              type="text"
-                              placeholder="Enter Model (e.g. GL-T402)"
-                              value={manualModel}
-                              onChange={(e) => setManualModel(e.target.value)}
-                              style={{
-                                flex: 1,
-                                background: 'rgba(0,0,0,0.4)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '6px',
-                                padding: '0.4rem 0.75rem',
-                                color: '#FFF',
-                                fontSize: '0.78rem'
-                              }}
-                            />
-                          </div>
+                          {/* Model Selection for Selected Brand */}
+                          {effectiveBrand && (
+                            <div style={{ marginTop: '0.4rem', paddingTop: '0.6rem', borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
+                              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+                                Select Model for <strong style={{ color: '#FFF' }}>{effectiveBrand} {activeCategory}</strong>:
+                              </div>
+
+                              {CATEGORY_MODELS[activeCategory]?.[effectiveBrand] && (
+                                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                                  {CATEGORY_MODELS[activeCategory][effectiveBrand].map((m) => (
+                                    <button
+                                      key={m}
+                                      onClick={() => setManualModel(m)}
+                                      style={{
+                                        padding: '0.25rem 0.6rem',
+                                        borderRadius: '5px',
+                                        border: effectiveModel === m ? '1.5px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+                                        background: effectiveModel === m ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.03)',
+                                        color: effectiveModel === m ? '#FFF' : 'var(--text-muted)',
+                                        fontWeight: 600,
+                                        fontSize: '0.72rem',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      {m}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+
+                              <input 
+                                type="text"
+                                placeholder={`Or enter model manually (e.g. ${activeCategory === 'Laptop' ? 'Inspiron 15' : 'iPhone 13'})`}
+                                value={manualModel}
+                                onChange={(e) => setManualModel(e.target.value)}
+                                style={{
+                                  width: '100%',
+                                  background: 'rgba(0,0,0,0.4)',
+                                  border: '1px solid var(--border-color)',
+                                  borderRadius: '6px',
+                                  padding: '0.4rem 0.75rem',
+                                  color: '#FFF',
+                                  fontSize: '0.78rem'
+                                }}
+                              />
+                            </div>
+                          )}
+
                         </div>
                       </div>
 
@@ -842,18 +860,55 @@ export default function AIScanner({ onSelectScanResult, onNavigateBack }) {
                       </button>
                     </div>
                   ) : (
-                    /* CASE 3: UNSUPPORTED E-WASTE ITEM DETECTED */
-                    <div>
-                      <AlertTriangle size={48} color="#FBBF24" style={{ margin: '0 auto 1rem' }} />
-                      <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FBBF24', marginBottom: '0.5rem' }}>
-                        Unsupported e-waste item
+                    /* CASE 3: UNCERTAIN PREDICTION — USER SELECTS MOBILE PHONE OR LAPTOP */
+                    <div style={{ padding: '1.5rem', textAlign: 'center' }}>
+                      <HelpCircle size={44} color="var(--accent-cyan)" style={{ margin: '0 auto 1rem' }} />
+                      <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#FFF', marginBottom: '0.5rem' }}>
+                        Unable to confidently identify. Please select:
                       </h3>
-                      <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-                        The object in this image was not recognized as a supported e-waste item. Please align a supported appliance (Mobile Phone, Laptop, Refrigerator, Air Conditioner, Television, Washing Machine, Monitor, Printer, CPU, Microwave) in clear lighting and retake.
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                        Choose whether your item is a Mobile Phone or a Laptop:
                       </p>
-                      <button className="btn-primary" onClick={() => setActiveInputMode('camera')} style={{ justifyContent: 'center', margin: '0 auto' }}>
-                        <Camera size={16} /> Retake Photo
-                      </button>
+
+                      <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <button
+                          className="btn-primary"
+                          onClick={() => {
+                            setDetectionResult({
+                              status: "SUCCESS",
+                              detections: [{
+                                class: "Mobile Phone",
+                                confidence: 0.95,
+                                category: "Consumer Electronics",
+                                bbox: [0.3, 0.2, 0.4, 0.6]
+                              }]
+                            });
+                            setCustomWeightKg("0.18");
+                          }}
+                          style={{ padding: '0.75rem 1.75rem', fontSize: '0.95rem' }}
+                        >
+                          <span>📱 Mobile Phone</span>
+                        </button>
+
+                        <button
+                          className="btn-accent-cyan"
+                          onClick={() => {
+                            setDetectionResult({
+                              status: "SUCCESS",
+                              detections: [{
+                                class: "Laptop",
+                                confidence: 0.94,
+                                category: "IT & Telecommunications",
+                                bbox: [0.2, 0.25, 0.6, 0.55]
+                              }]
+                            });
+                            setCustomWeightKg("2.1");
+                          }}
+                          style={{ padding: '0.75rem 1.75rem', fontSize: '0.95rem' }}
+                        >
+                          <span>💻 Laptop</span>
+                        </button>
+                      </div>
                     </div>
                   )}
 

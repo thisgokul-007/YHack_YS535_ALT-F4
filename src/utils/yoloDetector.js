@@ -9,47 +9,12 @@ try {
 } catch (e) {}
 
 export const EWASTE_CLASSES = [
-  "Refrigerator",
-  "Laptop",
   "Mobile Phone",
-  "Television",
-  "Washing Machine",
-  "Air Conditioner",
-  "Monitor",
-  "Printer",
-  "Computer CPU",
-  "Microwave"
+  "Laptop"
 ];
 
 // Presets metadata mapping for explicit preset selection & metadata lookup
 const PRESET_METADATA_MAP = {
-  refrigerator: {
-    class: "Refrigerator",
-    confidence: 0.96,
-    bbox: [0.15, 0.1, 0.7, 0.8],
-    category: "Large Household E-Waste",
-    weightRange: "65–75 kg",
-    materials: ["Steel (55%)", "Copper (12%)", "Aluminium (8%)", "Plastic (15%)"],
-    handling: ["Refrigerant Evacuation", "Compressor Oil Drain"]
-  },
-  washing: {
-    class: "Washing Machine",
-    confidence: 0.94,
-    bbox: [0.1, 0.15, 0.8, 0.75],
-    category: "Large Household E-Waste",
-    weightRange: "58–68 kg",
-    materials: ["Stainless Steel (60%)", "Copper Winding (14%)", "Polypropylene (18%)"],
-    handling: ["Concrete Counterweight Removal"]
-  },
-  laptop: {
-    class: "Laptop",
-    confidence: 0.93,
-    bbox: [0.2, 0.25, 0.6, 0.55],
-    category: "IT & Telecommunications",
-    weightRange: "2.0–2.8 kg",
-    materials: ["Gold/Silver Contacts (5%)", "Aluminium (35%)", "Li-Ion Cell (20%)"],
-    handling: ["Li-Ion Battery Isolation", "Data Storage Zeroing"]
-  },
   phone: {
     class: "Mobile Phone",
     confidence: 0.95,
@@ -68,23 +33,14 @@ const PRESET_METADATA_MAP = {
     materials: ["Gold/Palladium ICs (8%)", "Copper/Cobalt (30%)", "Gorilla Glass (62%)"],
     handling: ["Thermal Battery Safety Enclosure"]
   },
-  tv: {
-    class: "Television",
-    confidence: 0.91,
-    bbox: [0.12, 0.15, 0.76, 0.7],
-    category: "Consumer Electronics",
-    weightRange: "24–32 kg",
-    materials: ["Lead Glass (45%)", "Copper Yoke (12%)", "Impact Plastic (33%)"],
-    handling: ["Lead Glass Separation", "Capacitor Discharge"]
-  },
-  cable: {
-    class: "Copper Cable",
-    confidence: 0.92,
-    bbox: [0.15, 0.2, 0.7, 0.6],
-    category: "Cable & Wiring Scrap",
-    weightRange: "12–18 kg",
-    materials: ["Pure Electrolytic Copper (68%)", "PVC Plastic (32%)"],
-    handling: ["Mechanical Stripping"]
+  laptop: {
+    class: "Laptop",
+    confidence: 0.93,
+    bbox: [0.2, 0.25, 0.6, 0.55],
+    category: "IT & Telecommunications",
+    weightRange: "2.0–2.8 kg",
+    materials: ["Gold/Silver Contacts (5%)", "Aluminium (35%)", "Li-Ion Cell (20%)"],
+    handling: ["Li-Ion Battery Isolation", "Data Storage Zeroing"]
   }
 };
 

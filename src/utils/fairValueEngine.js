@@ -49,61 +49,21 @@ export function getBrandTier(brandName) {
 
 // 3. Category Reference Data (Base Ref Prices, Default Weights & Material Composition)
 export const CATEGORY_REFERENCE_DATA = {
-  "Refrigerator": {
-    baseRefPrice: 18000,
-    defaultWeightKg: 65,
-    materialBreakdown: { steel: 0.55, copper: 0.12, aluminium: 0.08, plastics: 0.15, glass: 0.10 }
-  },
-  "Laptop": {
-    baseRefPrice: 28000,
-    defaultWeightKg: 2.4,
-    materialBreakdown: { goldPcb: 0.08, aluminium: 0.35, plastics: 0.37, copper: 0.20 }
-  },
   "Mobile Phone": {
-    baseRefPrice: 14000,
-    defaultWeightKg: 0.22,
+    baseRefPrice: 16000,
+    defaultWeightKg: 0.18,
     materialBreakdown: { goldPcb: 0.12, copper: 0.28, glass: 0.60 }
   },
-  "Television": {
-    baseRefPrice: 22000,
-    defaultWeightKg: 26,
-    materialBreakdown: { glass: 0.45, copper: 0.12, plastics: 0.33, steel: 0.10 }
-  },
-  "Washing Machine": {
-    baseRefPrice: 16000,
-    defaultWeightKg: 62,
-    materialBreakdown: { steel: 0.60, copper: 0.14, plastics: 0.18, aluminium: 0.08 }
-  },
-  "Air Conditioner": {
-    baseRefPrice: 24000,
-    defaultWeightKg: 38,
-    materialBreakdown: { copper: 0.25, aluminium: 0.35, steel: 0.30, plastics: 0.10 }
-  },
-  "Monitor": {
-    baseRefPrice: 9500,
-    defaultWeightKg: 5.5,
-    materialBreakdown: { glass: 0.40, copper: 0.15, plastics: 0.35, goldPcb: 0.10 }
-  },
-  "Printer": {
-    baseRefPrice: 8000,
-    defaultWeightKg: 8.0,
-    materialBreakdown: { plastics: 0.50, steel: 0.30, copper: 0.10, goldPcb: 0.10 }
-  },
-  "Computer CPU": {
-    baseRefPrice: 19000,
-    defaultWeightKg: 9.5,
-    materialBreakdown: { goldPcb: 0.06, aluminium: 0.40, steel: 0.45, copper: 0.09 }
-  },
-  "Microwave": {
-    baseRefPrice: 7500,
-    defaultWeightKg: 14,
-    materialBreakdown: { steel: 0.65, copper: 0.18, glass: 0.10, plastics: 0.07 }
+  "Laptop": {
+    baseRefPrice: 32000,
+    defaultWeightKg: 2.1,
+    materialBreakdown: { goldPcb: 0.08, aluminium: 0.35, plastics: 0.37, copper: 0.20 }
   }
 };
 
 // 4. Calculate Material Scrap Value Rate (INR per kg)
 export function getScrapRatePerKg(categoryName) {
-  const ref = CATEGORY_REFERENCE_DATA[categoryName] || CATEGORY_REFERENCE_DATA["Refrigerator"];
+  const ref = CATEGORY_REFERENCE_DATA[categoryName] || CATEGORY_REFERENCE_DATA["Mobile Phone"];
   const breakdown = ref.materialBreakdown;
   let rate = 0;
   for (const [matKey, pct] of Object.entries(breakdown)) {

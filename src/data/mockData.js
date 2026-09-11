@@ -2,84 +2,16 @@
 
 export const PRESET_PRODUCTS = [
   {
-    id: "fridge-01",
-    name: "Old Refrigerator",
-    category: "Large Household E-Waste",
-    defaultCondition: "Non-functional",
-    estimatedWeightKg: 70,
-    image: "https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?auto=format&fit=crop&w=600&q=80",
-    materials: [
-      { name: "Steel", percentage: 55, estKg: 38.5, ratePerKg: 38 },
-      { name: "Copper", percentage: 12, estKg: 8.4, ratePerKg: 680 },
-      { name: "Aluminium", percentage: 8, estKg: 5.6, ratePerKg: 190 },
-      { name: "Plastic (ABS/HIPS)", percentage: 15, estKg: 10.5, ratePerKg: 35 },
-      { name: "Compressor / Glass / Others", percentage: 10, estKg: 7.0, ratePerKg: 20 }
-    ],
-    specialHandling: ["Refrigerant (R134a/R600a) Evacuation Required", "Compressor Oil Drain", "Capacitor Discharge"],
-    hazardLevel: "Medium",
-    minFairValue: 3000,
-    maxFairValue: 3600,
-    sampleOffers: [
-      { recyclerId: "rec-1", name: "GreenCycle Recycling Unit", rating: 4.9, distanceKm: 18, isAuthorized: true, offerPrice: 3400, status: "FAIR", tag: "Best Match" },
-      { recyclerId: "rec-2", name: "EcoMetals Processing Ltd", rating: 4.7, distanceKm: 24, isAuthorized: true, offerPrice: 3100, status: "FAIR", tag: "Quick Pickup" },
-      { recyclerId: "rec-3", name: "Local Scrap Buyer (Uncertified)", rating: 3.5, distanceKm: 5, isAuthorized: false, offerPrice: 2400, status: "UNFAIR", tag: "Lowball" }
-    ]
-  },
-  {
-    id: "washing-02",
-    name: "Front-Load Washing Machine",
-    category: "Large Household E-Waste",
-    defaultCondition: "Partial Functional / Motor Dead",
-    estimatedWeightKg: 62,
-    image: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?auto=format&fit=crop&w=600&q=80",
-    materials: [
-      { name: "Stainless Steel & Iron", percentage: 60, estKg: 37.2, ratePerKg: 40 },
-      { name: "Copper Winding (Motor)", percentage: 14, estKg: 8.68, ratePerKg: 690 },
-      { name: "Polypropylene Plastic", percentage: 18, estKg: 11.16, ratePerKg: 30 },
-      { name: "Control PCB & Harness", percentage: 8, estKg: 4.96, ratePerKg: 150 }
-    ],
-    specialHandling: ["Concrete Counterweight Removal", "Water Pump Separation"],
-    hazardLevel: "Low",
-    minFairValue: 2800,
-    maxFairValue: 3300,
-    sampleOffers: [
-      { recyclerId: "rec-1", name: "GreenCycle Recycling Unit", rating: 4.9, distanceKm: 18, isAuthorized: true, offerPrice: 3150, status: "FAIR", tag: "Recommended" },
-      { recyclerId: "rec-4", name: "Apex E-Waste Disposers", rating: 4.8, distanceKm: 31, isAuthorized: true, offerPrice: 2900, status: "FAIR", tag: "Bulk Buyer" }
-    ]
-  },
-  {
-    id: "laptop-03",
-    name: "Used Gaming / Business Laptop",
-    category: "IT & Telecommunications",
-    defaultCondition: "Non-functional / Motherboard Failure",
-    estimatedWeightKg: 2.3,
-    image: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",
-    materials: [
-      { name: "Gold/Silver PCB Contacts", percentage: 5, estKg: 0.11, ratePerKg: 8500 },
-      { name: "Aluminium Body & Heatpipes", percentage: 35, estKg: 0.8, ratePerKg: 210 },
-      { name: "Lithium-Ion Battery Cell", percentage: 20, estKg: 0.46, ratePerKg: 120 },
-      { name: "Display Glass & Plastic", percentage: 40, estKg: 0.92, ratePerKg: 25 }
-    ],
-    specialHandling: ["Li-Ion Battery Isolation", "Data Storage Zeroing / Destruction Tag"],
-    hazardLevel: "High",
-    minFairValue: 1200,
-    maxFairValue: 1600,
-    sampleOffers: [
-      { recyclerId: "rec-5", name: "Silicon Recovery Solutions", rating: 4.9, distanceKm: 12, isAuthorized: true, offerPrice: 1500, status: "FAIR", tag: "High Precious Metals" },
-      { recyclerId: "rec-1", name: "GreenCycle Recycling Unit", rating: 4.9, distanceKm: 18, isAuthorized: true, offerPrice: 1300, status: "FAIR", tag: "Standard" }
-    ]
-  },
-  {
-    id: "phone-04",
+    id: "phone-01",
     name: "Old Smartphone (Broken Screen)",
     category: "Consumer Electronics",
     defaultCondition: "Scrapped / Damaged Battery",
-    estimatedWeightKg: 0.22,
+    estimatedWeightKg: 0.18,
     image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=600&q=80",
     materials: [
-      { name: "Gold/Palladium IC Chips", percentage: 8, estKg: 0.017, ratePerKg: 14000 },
-      { name: "Copper & Cobalt Battery", percentage: 30, estKg: 0.066, ratePerKg: 1100 },
-      { name: "Gorilla Glass & Polymer", percentage: 62, estKg: 0.136, ratePerKg: 40 }
+      { name: "Gold/Palladium IC Chips", percentage: 8, estKg: 0.014, ratePerKg: 14000 },
+      { name: "Copper & Cobalt Battery", percentage: 30, estKg: 0.054, ratePerKg: 1100 },
+      { name: "Gorilla Glass & Polymer", percentage: 62, estKg: 0.112, ratePerKg: 40 }
     ],
     specialHandling: ["Thermal Battery Safety Enclosure"],
     hazardLevel: "High",
@@ -90,43 +22,25 @@ export const PRESET_PRODUCTS = [
     ]
   },
   {
-    id: "tv-05",
-    name: "Old CRT / Smart TV Unit",
-    category: "Consumer Electronics",
-    defaultCondition: "Broken Screen / Defective Board",
-    estimatedWeightKg: 28,
-    image: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=600&q=80",
+    id: "laptop-02",
+    name: "Used Gaming / Business Laptop",
+    category: "IT & Telecommunications",
+    defaultCondition: "Non-functional / Motherboard Failure",
+    estimatedWeightKg: 2.1,
+    image: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",
     materials: [
-      { name: "Lead Glass / Frame", percentage: 45, estKg: 12.6, ratePerKg: 15 },
-      { name: "Copper Yoke Coil", percentage: 12, estKg: 3.36, ratePerKg: 650 },
-      { name: "High Impact Plastic", percentage: 33, estKg: 9.24, ratePerKg: 30 },
-      { name: "Power PCB Board", percentage: 10, estKg: 2.8, ratePerKg: 140 }
+      { name: "Gold/Silver PCB Contacts", percentage: 5, estKg: 0.105, ratePerKg: 8500 },
+      { name: "Aluminium Body & Heatpipes", percentage: 35, estKg: 0.735, ratePerKg: 210 },
+      { name: "Lithium-Ion Battery Cell", percentage: 20, estKg: 0.42, ratePerKg: 120 },
+      { name: "Display Glass & Plastic", percentage: 40, estKg: 0.84, ratePerKg: 25 }
     ],
-    specialHandling: ["Lead Glass Separation", "Capacitor High Voltage Discharge"],
+    specialHandling: ["Li-Ion Battery Isolation", "Data Storage Zeroing / Destruction Tag"],
     hazardLevel: "High",
-    minFairValue: 900,
-    maxFairValue: 1250,
+    minFairValue: 1200,
+    maxFairValue: 1600,
     sampleOffers: [
-      { recyclerId: "rec-2", name: "EcoMetals Processing Ltd", rating: 4.7, distanceKm: 24, isAuthorized: true, offerPrice: 1150, status: "FAIR", tag: "Verified Lead Recycler" }
-    ]
-  },
-  {
-    id: "cable-06",
-    name: "Industrial Copper Wires & Cables",
-    category: "Cable & Wiring Scrap",
-    defaultCondition: "Stripped & Mixed Bundles",
-    estimatedWeightKg: 15,
-    image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
-    materials: [
-      { name: "Pure Electrolytic Copper", percentage: 68, estKg: 10.2, ratePerKg: 720 },
-      { name: "PVC Insulation Plastic", percentage: 32, estKg: 4.8, ratePerKg: 25 }
-    ],
-    specialHandling: ["Mechanical Stripping (No Burning Allowed)"],
-    hazardLevel: "Low",
-    minFairValue: 4200,
-    maxFairValue: 4800,
-    sampleOffers: [
-      { recyclerId: "rec-2", name: "EcoMetals Processing Ltd", rating: 4.7, distanceKm: 24, isAuthorized: true, offerPrice: 4650, status: "FAIR", tag: "Highest Metal Purity" }
+      { recyclerId: "rec-5", name: "Silicon Recovery Solutions", rating: 4.9, distanceKm: 12, isAuthorized: true, offerPrice: 1500, status: "FAIR", tag: "High Precious Metals" },
+      { recyclerId: "rec-1", name: "GreenCycle Recycling Unit", rating: 4.9, distanceKm: 18, isAuthorized: true, offerPrice: 1300, status: "FAIR", tag: "Standard" }
     ]
   }
 ];
