@@ -34,10 +34,10 @@ import CameraScanner from './CameraScanner';
 
 export const CATEGORY_BRANDS = {
   "Mobile Phone": [
-    "Samsung", "Apple", "OnePlus", "Xiaomi", "Redmi", "Realme", "Vivo", "Oppo", "Motorola", "Google"
+    "Samsung", "Apple", "OnePlus", "Xiaomi", "Redmi", "Realme", "Vivo", "Oppo", "Motorola", "Google", "Nothing", "POCO", "iQOO", "Nokia", "Honor", "Asus", "Sony"
   ],
   "Laptop": [
-    "Dell", "HP", "Lenovo", "Asus", "Acer", "Apple", "MSI", "Samsung", "Microsoft"
+    "Dell", "HP", "Lenovo", "Asus", "Acer", "Apple", "MSI", "Samsung", "Microsoft", "Razer", "LG", "Alienware", "Toshiba", "Fujitsu", "Infinix", "Honor"
   ],
   "Refrigerator": [
     "LG", "Samsung", "Whirlpool", "Godrej", "Haier", "Panasonic", "IFB", "Bosch", "Voltas Beko"

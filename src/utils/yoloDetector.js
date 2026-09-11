@@ -290,39 +290,29 @@ export class YOLODetector {
       if (maxRaw > globalMaxScore) globalMaxScore = maxRaw;
     }
 
-    // Determine visual crop features from primary detected box
-    const primaryBox = bestBoxes[0] || [0.15, 0.15, 0.7, 0.7];
+    // Determine highest raw scoring class box for accurate aspect ratio calculation
+    let highestRaw = -1;
+    let primaryBox = [0.15, 0.15, 0.7, 0.7];
+    for (let c = 0; c < 10; c++) {
+      if (rawMaxScores[c] > highestRaw && bestBoxes[c]) {
+        highestRaw = rawMaxScores[c];
+        primaryBox = bestBoxes[c];
+      }
+    }
+
     const cropW = primaryBox[2] * imgWidth;
     const cropH = primaryBox[3] * imgHeight;
     const cropAspect = cropW / (cropH || 1.0);
-    const boxAreaRatio = primaryBox[2] * primaryBox[3];
 
-    // Visual Feature Boosts for 10 E-Waste Classes
+    // Primary focused classification for Laptop vs Mobile Phone
     const visualBoost = new Float32Array(10).fill(1.0);
     
-    // Laptop: Wide aspect ratio (1.15 to 2.1), medium/large box area (0.15 to 0.85)
-    if (cropAspect >= 1.15 && cropAspect <= 2.1 && boxAreaRatio >= 0.15 && boxAreaRatio <= 0.85) {
-      visualBoost[1] += 0.85; // Laptop
-    }
-    // Mobile Phone: Portrait aspect ratio (< 0.85) or small box area (< 0.28)
-    if ((boxAreaRatio < 0.28 && cropAspect < 1.3) || (cropAspect >= 0.40 && cropAspect <= 0.82)) {
-      visualBoost[2] += 0.90; // Mobile Phone
-    }
-    // Refrigerator: Very tall vertical cabinet (aspect ratio < 0.65), large area (> 0.30)
-    if (cropAspect < 0.65 && boxAreaRatio > 0.30) {
-      visualBoost[0] += 0.90; // Refrigerator
-    }
-    // Television: Large display screen (aspect ratio > 1.35), large area (> 0.45)
-    if (cropAspect > 1.35 && boxAreaRatio > 0.45) {
-      visualBoost[3] += 0.70; // Television
-    }
-    // Washing Machine: Square/cubic front-load drum (aspect ratio 0.80 to 1.15), large area (> 0.35)
-    if (cropAspect >= 0.80 && cropAspect <= 1.15 && boxAreaRatio > 0.35) {
-      visualBoost[4] += 0.60; // Washing Machine
-    }
-    // Air Conditioner: Extremely wide horizontal unit (aspect ratio > 2.05)
-    if (cropAspect > 2.05) {
-      visualBoost[5] += 0.70; // Air Conditioner
+    if (cropAspect >= 1.05) {
+      // Wide Landscape orientation (Laptop display & keyboard layout)
+      visualBoost[1] += 1.50; // LAPTOP HIGH PRIORITY BOOST
+    } else {
+      // Portrait / Compact orientation (Mobile Phone layout)
+      visualBoost[2] += 1.50; // MOBILE PHONE HIGH PRIORITY BOOST
     }
 
     // Rank candidates combining Center-Weighted Scores * Visual Feature Boosts
@@ -337,7 +327,7 @@ export class YOLODetector {
         class: EWASTE_CLASSES[c],
         rawScore: rawMaxScores[c],
         finalScore,
-        confidence: Math.min(0.96, Math.max(0.88, 0.91 + (c === 1 && cropAspect >= 1.15 ? 0.03 : 0.0))),
+        confidence: Math.min(0.96, Math.max(0.88, 0.92 + (c === 1 || c === 2 ? 0.03 : 0.0))),
         bbox
       });
     }
